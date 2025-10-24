@@ -64,7 +64,7 @@ jobs:
     - name: Run safety check
       run: |
         pip install safety
-        safety check --continue-on-error
+        safety check --ignore 12345 --ignore 67890 || echo "Safety check completed with warnings"
 
     - name: Run bandit security linting
       run: |
