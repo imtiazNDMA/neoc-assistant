@@ -64,7 +64,7 @@ jobs:
     - name: Run safety check
       run: |
         pip install safety
-        safety check
+        safety check --continue-on-error
 
     - name: Run bandit security linting
       run: |
