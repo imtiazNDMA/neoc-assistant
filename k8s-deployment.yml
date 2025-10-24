@@ -1,0 +1,149 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neoc-ai-assistant
+  labels:
+    app: neoc-ai-assistant
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: neoc-ai-assistant
+  template:
+    metadata:
+      labels:
+        app: neoc-ai-assistant
+    spec:
+      containers:
+      - name: neoc-ai-assistant
+        image: neoc-ai-assistant:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: LLM_MODEL
+          value: "phi3:latest"
+        - name: API_HOST
+          value: "0.0.0.0"
+        - name: API_PORT
+          value: "8000"
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: OLLAMA_HOST
+          value: "http://ollama-service:11434"
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: chroma-storage
+          mountPath: /app/chroma_db
+        - name: cache-storage
+          mountPath: /app/.cache
+        - name: logs-storage
+          mountPath: /app/logs
+      volumes:
+      - name: chroma-storage
+        persistentVolumeClaim:
+          claimName: chroma-pvc
+      - name: cache-storage
+        emptyDir: {}
+      - name: logs-storage
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: neoc-ai-assistant-service
+spec:
+  selector:
+    app: neoc-ai-assistant
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  labels:
+    app: ollama
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      containers:
+      - name: ollama
+        image: ollama/ollama:latest
+        ports:
+        - containerPort: 11434
+        command: ["ollama", "serve"]
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "1000m"
+          limits:
+            memory: "8Gi"
+            cpu: "2000m"
+        volumeMounts:
+        - name: ollama-storage
+          mountPath: /root/.ollama
+      volumes:
+      - name: ollama-storage
+        persistentVolumeClaim:
+          claimName: ollama-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama-service
+spec:
+  selector:
+    app: ollama
+  ports:
+  - port: 11434
+    targetPort: 11434
+  type: ClusterIP
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: chroma-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi

@@ -1,0 +1,98 @@
+groups:
+  - name: neoc-ai-assistant
+    rules:
+      # Service availability alerts
+      - alert: NEOCAIAssistantDown
+        expr: up{job="neoc-ai-assistant"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "NEOC AI Assistant service is down"
+          description: "NEOC AI Assistant has been down for more than 5 minutes."
+
+      - alert: NEOCAIAssistantHighErrorRate
+        expr: rate(neoc_assistant_requests_total{status=~"5.."}[5m]) / rate(neoc_assistant_requests_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | printf \"%.2f\" }} (10% threshold)."
+
+      # Performance alerts
+      - alert: NEOCAIAssistantHighResponseTime
+        expr: histogram_quantile(0.95, rate(neoc_assistant_response_time_bucket[5m])) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value | printf \"%.2f\" }}s (10s threshold)."
+
+      - alert: NEOCAIAssistantLowCacheHitRate
+        expr: neoc_assistant_cache_hit_rate < 0.7
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate is {{ $value | printf \"%.2f\" }} (70% threshold)."
+
+      # Resource alerts
+      - alert: NEOCAIAssistantHighMemoryUsage
+        expr: neoc_assistant_memory_usage_mb / 1024 > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value | printf \"%.1f\" }}GB (90% threshold)."
+
+      - alert: NEOCAIAssistantHighCPUUsage
+        expr: rate(neoc_assistant_cpu_percent[5m]) > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value | printf \"%.1f\" }}% (90% threshold)."
+
+      # Business logic alerts
+      - alert: NEOCAIAssistantLowRequestRate
+        expr: rate(neoc_assistant_requests_total[15m]) < 1
+        for: 15m
+        labels:
+          severity: info
+        annotations:
+          summary: "Low request rate"
+          description: "Request rate is very low: {{ $value | printf \"%.2f\" }} req/min."
+
+      - alert: NEOCAIAssistantDocumentProcessingFailed
+        expr: increase(neoc_assistant_document_processing_errors_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Document processing failed"
+          description: "Document processing has failed in the last 5 minutes."
+
+  - name: infrastructure
+    rules:
+      - alert: HostOutOfMemory
+        expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host out of memory"
+          description: "Node memory is low: {{ $value | printf \"%.2f\" }}% available."
+
+      - alert: HostOutOfDiskSpace
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) < 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host out of disk space"
+          description: "Disk space is low: {{ $value | printf \"%.2f\" }}% available."

@@ -1,0 +1,116 @@
+[project]
+name = "neoc-ai-assistant"
+version = "2.0.0"
+description = "Complete LLM application for disaster management with comprehensive knowledge of natural hazards, prediction, mitigation, and prevention strategies"
+readme = "README.md"
+requires-python = ">=3.13"
+authors = [
+    {name = "NEOC AI Assistant Team", email = "team@neoc-ai-assistant.com"}
+]
+keywords = ["AI", "LLM", "disaster-management", "natural-hazards", "risk-assessment", "mitigation", "prevention", "emergency-response", "fastapi", "ollama"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: System :: Monitoring",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+]
+dependencies = [
+    "chromadb>=1.1.1",
+    "crewai>=1.1.0",
+    "fastapi>=0.119.1",
+    "langchain>=1.0.2",
+    "langchain-chroma>=0.2.0",
+    "langchain-community>=0.4",
+    "langchain-huggingface>=1.0.0",
+    "langchain-ollama>=1.0.0",
+    "langgraph>=1.0.1",
+    "ollama>=0.6.0",
+    "psutil>=7.1.1",
+    "pydantic>=2.12.3",
+    "pypdf>=6.1.3",
+    "requests>=2.32.5",
+    "sentence-transformers>=5.1.2",
+    "uvicorn>=0.38.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/your-org/neoc-ai-assistant"
+Documentation = "https://neoc-ai-assistant.readthedocs.io/"
+Repository = "https://github.com/your-org/neoc-ai-assistant"
+Issues = "https://github.com/your-org/neoc-ai-assistant/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/neoc_assistant"]
+
+[tool.hatch.version]
+path = "src/neoc_assistant/__init__.py"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --tb=short --cov=src/neoc_assistant --cov-report=html --cov-report=term-missing"
+
+[tool.coverage.run]
+source = ["src/neoc_assistant"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__init__.py"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError"
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py313']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+  | chroma_db
+  | logs
+  | data
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["neoc_assistant"]
+skip = ["chroma_db", "logs", "data"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.2.0",
+    "pytest-cov>=7.0.0",
+]

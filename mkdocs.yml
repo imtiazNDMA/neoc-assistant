@@ -1,0 +1,91 @@
+site_name: NEOC AI Assistant
+site_description: Complete LLM application for disaster management with comprehensive knowledge of natural hazards, prediction, mitigation, and prevention strategies.
+site_author: NEOC AI Assistant Team
+site_url: https://neoc-ai-assistant.readthedocs.io/
+
+repo_name: neoc-ai-assistant
+repo_url: https://github.com/your-org/neoc-ai-assistant
+edit_uri: edit/main/docs/
+
+copyright: Copyright &copy; 2024 NEOC Assistant Team
+
+theme:
+  name: material
+  palette:
+    primary: blue
+    accent: blue
+  font:
+    text: Source Code Pro
+    code: Source Code Pro
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_source_links: true
+            show_symbol_type_toc: true
+            show_symbol_type_heading: true
+  - coverage:
+      page_name: coverage
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: installation.md
+      - Quick Start: quickstart.md
+      - Configuration: configuration.md
+  - Citation Standards: citation-standards.md
+  - API Reference:
+      - Chat API: api/chat.md
+      - Documents API: api/documents.md
+      - Health API: api/health.md
+  - Development:
+      - Contributing: development/contributing.md
+      - Testing: development/testing.md
+      - Code Quality: development/code-quality.md
+  - Architecture:
+      - Overview: architecture/overview.md
+      - Components: architecture/components.md
+      - Performance: architecture/performance.md
+  - Coverage: coverage.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - admonition
+  - attr_list
+  - md_in_html
+  - footnotes
+  - tables
+  - toc:
+      permalink: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/your-org/neoc-ai-assistant
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/neoc-ai-assistant/
+
+  generator: false

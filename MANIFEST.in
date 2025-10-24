@@ -1,0 +1,34 @@
+# Include package data
+include README.md
+include LICENSE
+include requirements-dev.txt
+include .env.example
+
+# Include static files
+recursive-include static *
+
+# Include documentation
+recursive-include docs *
+
+# Include scripts
+recursive-include scripts *
+
+# Exclude development files
+exclude .gitignore
+exclude .env
+exclude pytest.ini
+exclude mypy.ini
+exclude .pre-commit-config.yaml
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude .pytest_cache
+global-exclude .coverage
+global-exclude htmlcov
+global-exclude .mypy_cache
+
+# Exclude data and logs
+exclude data/*
+exclude logs/*
+exclude chroma_db/*
+exclude experiments/*
+exclude runs/*

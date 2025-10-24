@@ -1,0 +1,121 @@
+{
+  "dashboard": {
+    "title": "NEOC AI Assistant - Performance Dashboard",
+    "tags": ["neoc-ai-assistant", "rag", "ai"],
+    "timezone": "UTC",
+    "panels": [
+      {
+        "title": "Request Rate",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+        "targets": [
+          {
+            "expr": "rate(neoc_assistant_requests_total[5m])",
+            "legendFormat": "Requests/sec"
+          }
+        ]
+      },
+      {
+        "title": "Response Time (95th percentile)",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(neoc_assistant_response_time_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(neoc_assistant_response_time_bucket[5m]))",
+            "legendFormat": "50th percentile"
+          }
+        ]
+      },
+      {
+        "title": "Error Rate",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+        "targets": [
+          {
+            "expr": "rate(neoc_assistant_requests_total{status=~\"5..\"}[5m]) / rate(neoc_assistant_requests_total[5m]) * 100",
+            "legendFormat": "Error rate %"
+          }
+        ]
+      },
+      {
+        "title": "Cache Hit Rate",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+        "targets": [
+          {
+            "expr": "neoc_assistant_cache_hit_rate * 100",
+            "legendFormat": "Cache hit rate %"
+          }
+        ]
+      },
+      {
+        "title": "Memory Usage",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+        "targets": [
+          {
+            "expr": "neoc_assistant_memory_usage_mb",
+            "legendFormat": "Application memory (MB)"
+          },
+          {
+            "expr": "node_memory_MemTotal_bytes / 1024 / 1024 - node_memory_MemAvailable_bytes / 1024 / 1024",
+            "legendFormat": "System memory used (MB)"
+          }
+        ]
+      },
+      {
+        "title": "CPU Usage",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+        "targets": [
+          {
+            "expr": "rate(neoc_assistant_cpu_percent[5m])",
+            "legendFormat": "Application CPU %"
+          },
+          {
+            "expr": "100 - avg(irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100",
+            "legendFormat": "System CPU %"
+          }
+        ]
+      },
+      {
+        "title": "Active Connections",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+        "targets": [
+          {
+            "expr": "neoc_assistant_active_connections",
+            "legendFormat": "Active connections"
+          }
+        ]
+      },
+      {
+        "title": "Document Processing",
+        "type": "graph",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+        "targets": [
+          {
+            "expr": "rate(neoc_assistant_documents_processed_total[5m])",
+            "legendFormat": "Documents processed/min"
+          },
+          {
+            "expr": "neoc_assistant_document_processing_queue_length",
+            "legendFormat": "Queue length"
+          }
+        ]
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s",
+    "timepicker": {
+      "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"]
+    }
+  }
+}
