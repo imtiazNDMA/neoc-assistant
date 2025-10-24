@@ -10,27 +10,33 @@ from pathlib import Path
 src_path = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
+
 def test_imports():
     """Test that all modules can be imported"""
     print("Testing imports...")
 
     try:
         from neoc_assistant.document_processor import document_processor
+
         print("Document processor imported successfully")
 
         from neoc_assistant.llm_service import llm_service
+
         print("LLM service imported successfully")
 
         from neoc_assistant.rag_pipeline import rag_pipeline
+
         print("RAG pipeline imported successfully")
 
         from neoc_assistant.routers import chat, documents
+
         print("Routers imported successfully")
 
         return True
     except Exception as e:
         print(f"Import error: {e}")
         return False
+
 
 def test_vectorstore():
     """Test vectorstore functionality"""
@@ -54,6 +60,7 @@ def test_vectorstore():
         print(f"Vectorstore error: {e}")
         return False
 
+
 def test_llm():
     """Test LLM service"""
     print("\nTesting LLM service...")
@@ -69,6 +76,7 @@ def test_llm():
     except Exception as e:
         print(f"LLM service error: {e}")
         return False
+
 
 def main():
     """Run quick tests"""
@@ -88,6 +96,7 @@ def main():
 
     all_pass = all(result for _, result in results)
     print(f"\nOverall: {'PASS' if all_pass else 'FAIL'}")
+
 
 if __name__ == "__main__":
     main()

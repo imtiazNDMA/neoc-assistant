@@ -3,8 +3,10 @@
 Test script for NEOC AI Assistant Web UI
 """
 
-import requests
 import time
+
+import requests
+
 
 def test_ui():
     """Test if the web UI loads correctly"""
@@ -29,6 +31,7 @@ def test_ui():
         print(f"Could not connect to web UI: {e}")
         return False
 
+
 def test_api():
     """Test if the API endpoints work"""
     try:
@@ -45,9 +48,11 @@ def test_api():
         # Test chat endpoint
         chat_data = {
             "message": "Hello",
-            "conversation_id": "test_" + str(int(time.time()))
+            "conversation_id": "test_" + str(int(time.time())),
         }
-        response = requests.post("http://localhost:8000/api/chat/", json=chat_data, timeout=10)
+        response = requests.post(
+            "http://localhost:8000/api/chat/", json=chat_data, timeout=10
+        )
         if response.status_code == 200:
             data = response.json()
             if "response" in data and "conversation_id" in data:
@@ -64,6 +69,7 @@ def test_api():
     except requests.exceptions.RequestException as e:
         print(f"Could not connect to API: {e}")
         return False
+
 
 def main():
     """Run UI tests"""
@@ -85,6 +91,7 @@ def main():
         print("Open http://localhost:8000 in your browser to use the chatbot.")
     else:
         print("Some tests failed. Check the server logs for errors.")
+
 
 if __name__ == "__main__":
     main()

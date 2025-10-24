@@ -1,27 +1,30 @@
-from langchain_ollama import OllamaLLM
-from langchain_core.prompts import PromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
-from typing import List, Dict, Any, Optional
-import logging
 import hashlib
+import logging
+import threading
 import time
 from functools import lru_cache
-import threading
+from typing import Any, Dict, List, Optional
+
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import PromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_ollama import OllamaLLM
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler('logs/llm_service.log', mode='a')
-    ]
+        logging.FileHandler("logs/llm_service.log", mode="a"),
+    ],
 )
 logger = logging.getLogger(__name__)
 
+
 class ResponseCache:
     """Thread-safe response cache with TTL"""
+
     def __init__(self, max_size: int = 100, ttl_seconds: int = 3600):
         self.max_size = max_size
         self.ttl = ttl_seconds
@@ -42,10 +45,10 @@ class ResponseCache:
         with self.lock:
             if len(self.cache) >= self.max_size:
                 # Remove oldest entry
-                oldest_key = min(self.cache.keys(),
-                               key=lambda k: self.cache[k][1])
+                oldest_key = min(self.cache.keys(), key=lambda k: self.cache[k][1])
                 del self.cache[oldest_key]
             self.cache[key] = (value, time.time())
+
 
 class LLMService:
     """Optimized LLM service with caching and performance monitoring"""
@@ -55,8 +58,8 @@ class LLMService:
         self.llm = OllamaLLM(
             model=model_name,
             temperature=0.1,  # Lower temperature for more consistent responses
-            num_ctx=1024,     # Reduced context window to save memory
-            num_thread=1      # Reduced threads to save memory
+            num_ctx=1024,  # Reduced context window to save memory
+            num_thread=1,  # Reduced threads to save memory
         )
 
         # Initialize caches
@@ -64,10 +67,10 @@ class LLMService:
 
         # Performance metrics
         self.metrics = {
-            'total_requests': 0,
-            'cache_hits': 0,
-            'total_tokens': 0,
-            'avg_response_time': 0.0
+            "total_requests": 0,
+            "cache_hits": 0,
+            "total_tokens": 0,
+            "avg_response_time": 0.0,
         }
 
         self.setup_chains()
@@ -77,7 +80,8 @@ class LLMService:
         """Set up LangChain chains for different tasks"""
 
         # Basic chat chain (simplified for testing)
-        self.chat_prompt = PromptTemplate.from_template("""
+        self.chat_prompt = PromptTemplate.from_template(
+            """
 You are NEOC AI Assistant, a disaster management expert.
 
 Context: {context}
@@ -85,7 +89,8 @@ Context: {context}
 Question: {question}
 
 Please provide a helpful response.
-""")
+"""
+        )
 
         self.chat_chain = (
             {"context": RunnablePassthrough(), "question": RunnablePassthrough()}
@@ -95,7 +100,8 @@ Please provide a helpful response.
         )
 
         # RAG chain for retrieval-augmented generation
-        self.rag_prompt = PromptTemplate.from_template("""
+        self.rag_prompt = PromptTemplate.from_template(
+            """
 You are NEOC AI Assistant, a comprehensive disaster management expert with extensive knowledge of all natural hazards, their prediction methodologies, mitigation strategies, and prevention protocols.
 
 Use the following pieces of context to answer the question. If you don't know the answer based on the context, say so clearly and provide general guidance based on your expertise.
@@ -118,7 +124,8 @@ Response format:
 - Provide your main answer first
 - If references are used, add a "Bibliography" section at the end with IEEE citations
 
-Answer:""")
+Answer:"""
+        )
 
         self.rag_chain = (
             {"context": RunnablePassthrough(), "question": RunnablePassthrough()}
@@ -130,7 +137,7 @@ Answer:""")
     def generate_response(self, question: str, context: str = "") -> str:
         """Generate response with O(1) caching and performance monitoring"""
         start_time = time.time()
-        self.metrics['total_requests'] += 1
+        self.metrics["total_requests"] += 1
 
         # Input validation
         if not question or not question.strip():
@@ -142,13 +149,18 @@ Answer:""")
         # Check cache first - O(1)
         cached_response = self.response_cache.get(cache_key)
         if cached_response:
-            self.metrics['cache_hits'] += 1
+            self.metrics["cache_hits"] += 1
             logger.debug("LLM response cache hit")
             return cached_response
 
         try:
             # Generate response using the LLM chain
-            response = self.chat_chain.invoke({"context": context or "General disaster management knowledge", "question": question})
+            response = self.chat_chain.invoke(
+                {
+                    "context": context or "General disaster management knowledge",
+                    "question": question,
+                }
+            )
 
             if response:
                 response = response.strip()
@@ -157,10 +169,13 @@ Answer:""")
 
                 # Update metrics
                 response_time = time.time() - start_time
-                self.metrics['avg_response_time'] = (
-                    (self.metrics['avg_response_time'] * (self.metrics['total_requests'] - 1)) +
-                    response_time
-                ) / self.metrics['total_requests']
+                self.metrics["avg_response_time"] = (
+                    (
+                        self.metrics["avg_response_time"]
+                        * (self.metrics["total_requests"] - 1)
+                    )
+                    + response_time
+                ) / self.metrics["total_requests"]
 
                 logger.debug(f"LLM response generated in {response_time:.2f}s")
                 return response
@@ -186,8 +201,8 @@ Answer:""")
 
         # O(n) single pass formatting
         for i, doc in enumerate(documents):
-            content = doc.page_content if hasattr(doc, 'page_content') else str(doc)
-            source = getattr(doc, 'metadata', {}).get('source', f'Document {i+1}')
+            content = doc.page_content if hasattr(doc, "page_content") else str(doc)
+            source = getattr(doc, "metadata", {}).get("source", f"Document {i+1}")
 
             # Limit content length for performance
             if len(content) > 1000:
@@ -210,16 +225,17 @@ Answer:""")
     def get_performance_metrics(self) -> Dict[str, Any]:
         """Get performance metrics - O(1)"""
         cache_hit_rate = (
-            self.metrics['cache_hits'] / self.metrics['total_requests']
-            if self.metrics['total_requests'] > 0 else 0
+            self.metrics["cache_hits"] / self.metrics["total_requests"]
+            if self.metrics["total_requests"] > 0
+            else 0
         )
 
         return {
-            'total_requests': self.metrics['total_requests'],
-            'cache_hit_rate': cache_hit_rate,
-            'avg_response_time': self.metrics['avg_response_time'],
-            'cache_size': len(self.response_cache.cache),
-            'model_name': self.model_name
+            "total_requests": self.metrics["total_requests"],
+            "cache_hit_rate": cache_hit_rate,
+            "avg_response_time": self.metrics["avg_response_time"],
+            "cache_size": len(self.response_cache.cache),
+            "model_name": self.model_name,
         }
 
     def clear_cache(self) -> None:
@@ -227,6 +243,7 @@ Answer:""")
         with self.response_cache.lock:
             self.response_cache.cache.clear()
         logger.info("LLM response cache cleared")
+
 
 # Global instance
 llm_service = LLMService()

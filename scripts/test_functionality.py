@@ -4,10 +4,12 @@ Functionality Test Script for NEOC AI Assistant
 Tests disaster management expertise and citation functionality
 """
 
-import requests
-import time
 import json
+import time
 from typing import Dict, List
+
+import requests
+
 
 class FunctionalityTester:
     """Test disaster management functionality and citations"""
@@ -24,7 +26,7 @@ class FunctionalityTester:
             "How should communities prepare for earthquakes?",
             "Explain flood risk assessment methods",
             "What are the phases of disaster management?",
-            "How does climate change affect disaster frequency?"
+            "How does climate change affect disaster frequency?",
         ]
 
         results = {}
@@ -32,9 +34,7 @@ class FunctionalityTester:
             try:
                 print(f"[INFO] Testing query {i+1}: {query[:50]}...")
                 response = requests.post(
-                    f"{self.base_url}/api/chat/",
-                    json={"message": query},
-                    timeout=60
+                    f"{self.base_url}/api/chat/", json={"message": query}, timeout=60
                 )
 
                 if response.status_code == 200:
@@ -42,20 +42,19 @@ class FunctionalityTester:
                     results[f"query_{i+1}"] = {
                         "success": True,
                         "response_length": len(data.get("response", "")),
-                        "has_citations": "bibliography" in data.get("response", "").lower() or "references" in data.get("response", "").lower(),
-                        "response_time": response.elapsed.total_seconds()
+                        "has_citations": "bibliography"
+                        in data.get("response", "").lower()
+                        or "references" in data.get("response", "").lower(),
+                        "response_time": response.elapsed.total_seconds(),
                     }
                 else:
                     results[f"query_{i+1}"] = {
                         "success": False,
-                        "error": f"Status code: {response.status_code}"
+                        "error": f"Status code: {response.status_code}",
                     }
 
             except Exception as e:
-                results[f"query_{i+1}"] = {
-                    "success": False,
-                    "error": str(e)
-                }
+                results[f"query_{i+1}"] = {"success": False, "error": str(e)}
 
         return results
 
@@ -66,13 +65,10 @@ class FunctionalityTester:
             return {
                 "success": response.status_code == 200,
                 "status_code": response.status_code,
-                "response_time": response.elapsed.total_seconds()
+                "response_time": response.elapsed.total_seconds(),
             }
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def run_tests(self) -> Dict:
         """Run all functionality tests"""
@@ -95,13 +91,17 @@ class FunctionalityTester:
         # Analyze results
         chat_results = results["chat"]
         successful_queries = sum(1 for r in chat_results.values() if r["success"])
-        citation_queries = sum(1 for r in chat_results.values() if r.get("has_citations", False))
+        citation_queries = sum(
+            1 for r in chat_results.values() if r.get("has_citations", False)
+        )
 
         results["summary"] = {
             "total_queries": len(chat_results),
             "successful_queries": successful_queries,
-            "citation_coverage": citation_queries / len(chat_results) if chat_results else 0,
-            "overall_success": results["health"]["success"] and successful_queries > 0
+            "citation_coverage": (
+                citation_queries / len(chat_results) if chat_results else 0
+            ),
+            "overall_success": results["health"]["success"] and successful_queries > 0,
         }
 
         return results
@@ -118,7 +118,9 @@ class FunctionalityTester:
             return
 
         summary = results["summary"]
-        print(f"[INFO] Chat queries: {summary['successful_queries']}/{summary['total_queries']} successful")
+        print(
+            f"[INFO] Chat queries: {summary['successful_queries']}/{summary['total_queries']} successful"
+        )
         print(".1%")
 
         if summary["overall_success"]:
@@ -130,13 +132,18 @@ class FunctionalityTester:
         for query_id, result in results["chat"].items():
             status = "[PASS]" if result["success"] else "[FAIL]"
             citations = " (with citations)" if result.get("has_citations") else ""
-            print(f"  {status} {query_id}: {result.get('response_length', 0)} chars{citations}")
+            print(
+                f"  {status} {query_id}: {result.get('response_length', 0)} chars{citations}"
+            )
+
 
 def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="NEOC AI Assistant Functionality Test")
-    parser.add_argument("--url", default="http://localhost:8000", help="Base URL of the service")
+    parser.add_argument(
+        "--url", default="http://localhost:8000", help="Base URL of the service"
+    )
 
     args = parser.parse_args()
 
@@ -145,6 +152,7 @@ def main():
     tester.print_report(results)
 
     return 0 if results.get("summary", {}).get("overall_success", False) else 1
+
 
 if __name__ == "__main__":
     exit(main())

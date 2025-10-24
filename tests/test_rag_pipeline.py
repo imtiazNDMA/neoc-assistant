@@ -1,10 +1,13 @@
 """
 Unit tests for RAG Pipeline with Big-O performance validation
 """
-import pytest
+
 import time
 from unittest.mock import Mock, patch
-from neoc_assistant.rag_pipeline import RAGPipeline, LRUCache
+
+import pytest
+
+from neoc_assistant.rag_pipeline import LRUCache, RAGPipeline
 
 
 class TestLRUCache:
@@ -43,14 +46,16 @@ class TestRAGPipeline:
     @pytest.fixture
     def rag_pipeline(self):
         """Create RAG pipeline instance"""
-        with patch('neoc_assistant.document_processor.document_processor'):
+        with patch("neoc_assistant.document_processor.document_processor"):
             pipeline = RAGPipeline(max_cache_size=10)
             return pipeline
 
     def test_cache_hit_performance(self, rag_pipeline):
         """Test that caching improves performance"""
         # Mock the chain invoke
-        with patch.object(rag_pipeline.rag_chain, 'invoke', return_value="Test response"):
+        with patch.object(
+            rag_pipeline.rag_chain, "invoke", return_value="Test response"
+        ):
             # First call - cache miss
             start_time = time.time()
             result1 = rag_pipeline.process_query("test question")
@@ -121,7 +126,7 @@ class TestRAGPipeline:
 
     def test_performance_metrics(self, rag_pipeline):
         """Test performance metrics are tracked"""
-        with patch.object(rag_pipeline.rag_chain, 'invoke', return_value="Test"):
+        with patch.object(rag_pipeline.rag_chain, "invoke", return_value="Test"):
             rag_pipeline.process_query("test")
 
             metrics = rag_pipeline.get_performance_metrics()

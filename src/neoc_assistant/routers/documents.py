@@ -1,18 +1,23 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File
-from pydantic import BaseModel
-from typing import List
 import os
+from typing import List
+
+from fastapi import APIRouter, File, HTTPException, UploadFile
+from pydantic import BaseModel
+
 from ..document_processor import document_processor
 
 router = APIRouter()
+
 
 class DocumentInfo(BaseModel):
     filename: str
     status: str
     chunks_count: int = 0
 
+
 class DocumentList(BaseModel):
     documents: List[DocumentInfo]
+
 
 @router.get("/", response_model=DocumentList)
 async def list_documents():
@@ -27,16 +32,23 @@ async def list_documents():
 
         if os.path.exists(data_dir):
             for filename in os.listdir(data_dir):
-                if filename.endswith('.pdf'):
-                    documents.append(DocumentInfo(
-                        filename=filename,
-                        status="ingested" if document_processor.vectorstore else "pending",
-                        chunks_count=0  # TODO: Get actual chunk count
-                    ))
+                if filename.endswith(".pdf"):
+                    documents.append(
+                        DocumentInfo(
+                            filename=filename,
+                            status=(
+                                "ingested"
+                                if document_processor.vectorstore
+                                else "pending"
+                            ),
+                            chunks_count=0,  # TODO: Get actual chunk count
+                        )
+                    )
 
         return DocumentList(documents=documents)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/ingest")
 async def ingest_documents():
@@ -45,9 +57,13 @@ async def ingest_documents():
     """
     try:
         document_processor.ingest_all_documents()
-        return {"message": "Document ingestion completed successfully", "status": "completed"}
+        return {
+            "message": "Document ingestion completed successfully",
+            "status": "completed",
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/upload")
 async def upload_document(file: UploadFile = File(...)):
@@ -56,9 +72,13 @@ async def upload_document(file: UploadFile = File(...)):
     """
     try:
         # TODO: Implement single document upload and ingestion
-        return {"message": f"Document {file.filename} uploaded successfully", "status": "processing"}
+        return {
+            "message": f"Document {file.filename} uploaded successfully",
+            "status": "processing",
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.delete("/{filename}")
 async def delete_document(filename: str):

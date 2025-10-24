@@ -109,6 +109,10 @@ line_length = 88
 known_first_party = ["neoc_assistant"]
 skip = ["chroma_db", "logs", "data"]
 
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "F401", "F841", "E722", "F541", "F811"]
+
 [dependency-groups]
 dev = [
     "pytest>=8.4.2",

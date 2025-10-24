@@ -1,29 +1,33 @@
-from langchain_core.runnables import RunnablePassthrough
-from langchain_core.prompts import PromptTemplate
+import hashlib
+import logging
+import threading
+import time
+from collections import OrderedDict
+from functools import lru_cache
+from typing import Any, Dict, List, Optional
+
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import PromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+
 from .document_processor import document_processor
 from .llm_service import llm_service
-from typing import List, Dict, Any, Optional
-import logging
-import hashlib
-import time
-from functools import lru_cache
-from collections import OrderedDict
-import threading
 
 # Configure structured logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler('logs/rag_pipeline.log', mode='a')
-    ]
+        logging.FileHandler("logs/rag_pipeline.log", mode="a"),
+    ],
 )
 logger = logging.getLogger(__name__)
 
+
 class LRUCache:
     """Thread-safe LRU cache with O(1) operations"""
+
     def __init__(self, capacity: int = 100):
         self.capacity = capacity
         self.cache = OrderedDict()
@@ -46,12 +50,14 @@ class LRUCache:
                     self.cache.popitem(last=False)  # Remove least recently used
             self.cache[key] = value
 
+
 class RAGPipeline:
     """Optimized RAG pipeline with O(1) caching and efficient memory management"""
 
     def __init__(self, max_cache_size: int = 200, max_memory_mb: int = 500):
         # Ensure document processor is initialized
         from .document_processor import document_processor
+
         if document_processor.vectorstore is None:
             document_processor.create_vectorstore([])
 
@@ -66,10 +72,10 @@ class RAGPipeline:
 
         # Performance metrics
         self.metrics = {
-            'total_queries': 0,
-            'cache_hits': 0,
-            'avg_response_time': 0.0,
-            'total_response_time': 0.0
+            "total_queries": 0,
+            "cache_hits": 0,
+            "avg_response_time": 0.0,
+            "total_response_time": 0.0,
         }
 
         self.setup_rag_chain()
@@ -79,7 +85,8 @@ class RAGPipeline:
         """Set up the RAG chain using LangChain"""
 
         # RAG prompt template (simplified for testing)
-        self.rag_prompt = PromptTemplate.from_template("""
+        self.rag_prompt = PromptTemplate.from_template(
+            """
 You are NEOC AI Assistant, a disaster management expert.
 
 Context: {context}
@@ -87,13 +94,16 @@ Context: {context}
 Question: {question}
 
 Please provide a helpful response.
-""")
+"""
+        )
 
         # Create the RAG chain (temporarily simplified for testing)
         self.rag_chain = (
-            {"context": lambda x: "No context available for testing.",
-             "conversation_history": lambda x: "",
-             "question": RunnablePassthrough()}
+            {
+                "context": lambda x: "No context available for testing.",
+                "conversation_history": lambda x: "",
+                "question": RunnablePassthrough(),
+            }
             | self.rag_prompt
             | llm_service.llm
             | StrOutputParser()
@@ -154,15 +164,18 @@ Please provide a helpful response.
 
         return "\n".join(formatted_history)
 
-    def process_query(self, question: str, conversation_id: str = "default",
-                      use_crewai: bool = False) -> Dict[str, Any]:
+    def process_query(
+        self, question: str, conversation_id: str = "default", use_crewai: bool = False
+    ) -> Dict[str, Any]:
         """Process query with O(1) caching and optimized performance"""
         start_time = time.time()
-        self.metrics['total_queries'] += 1
+        self.metrics["total_queries"] += 1
 
         # Input validation - O(1)
         if not isinstance(question, str) or not question.strip():
-            return self._create_error_response("Invalid question provided", conversation_id)
+            return self._create_error_response(
+                "Invalid question provided", conversation_id
+            )
 
         question = question.strip()
         if len(question) > 1000:  # Reasonable limit
@@ -172,16 +185,15 @@ Please provide a helpful response.
         cache_key = self._generate_cache_key(question, conversation_id)
         cached_response = self.response_cache.get(cache_key)
         if cached_response:
-            self.metrics['cache_hits'] += 1
+            self.metrics["cache_hits"] += 1
             logger.info("Response cache hit")
             return cached_response
 
         try:
             # Process query through optimized RAG chain
-            result = self.rag_chain.invoke({
-                "question": question,
-                "conversation_id": conversation_id
-            })
+            result = self.rag_chain.invoke(
+                {"question": question, "conversation_id": conversation_id}
+            )
             response = result.strip() if result else "No response generated"
 
             # Store in conversation memory with memory management
@@ -196,7 +208,7 @@ Please provide a helpful response.
                 "conversation_id": conversation_id,
                 "sources": sources,
                 "success": True,
-                "processing_time": time.time() - start_time
+                "processing_time": time.time() - start_time,
             }
 
             # Cache successful responses - O(1)
@@ -216,7 +228,9 @@ Please provide a helpful response.
         combined = f"{question}:{conversation_id}"
         return hashlib.md5(combined.encode()).hexdigest()
 
-    def _add_to_conversation_memory(self, conversation_id: str, question: str, response: str) -> None:
+    def _add_to_conversation_memory(
+        self, conversation_id: str, question: str, response: str
+    ) -> None:
         """Add to conversation memory with memory bounds checking - O(1) amortized"""
         if conversation_id not in self.conversation_memory:
             self.conversation_memory[conversation_id] = []
@@ -228,7 +242,7 @@ Please provide a helpful response.
         exchange = {
             "question": question,
             "response": response,
-            "timestamp": time.time()
+            "timestamp": time.time(),
         }
 
         self.conversation_memory[conversation_id].append(exchange)
@@ -247,9 +261,12 @@ Please provide a helpful response.
         for conv_id, history in self.conversation_memory.items():
             # Keep only recent exchanges
             recent_history = [
-                exchange for exchange in history
-                if exchange.get('timestamp', 0) > cutoff_time
-            ][:10]  # Max 10 exchanges per conversation
+                exchange
+                for exchange in history
+                if exchange.get("timestamp", 0) > cutoff_time
+            ][
+                :10
+            ]  # Max 10 exchanges per conversation
 
             if recent_history:
                 self.conversation_memory[conv_id] = recent_history
@@ -262,25 +279,26 @@ Please provide a helpful response.
 
         # Recalculate memory usage
         self.current_memory_usage = sum(
-            len(str(conv).encode())
-            for conv in self.conversation_memory.values()
+            len(str(conv).encode()) for conv in self.conversation_memory.values()
         )
 
-    def _create_error_response(self, error_msg: str, conversation_id: str) -> Dict[str, Any]:
+    def _create_error_response(
+        self, error_msg: str, conversation_id: str
+    ) -> Dict[str, Any]:
         """Create standardized error response - O(1)"""
         return {
             "response": f"An error occurred: {error_msg}",
             "conversation_id": conversation_id,
             "sources": [],
             "success": False,
-            "error": error_msg
+            "error": error_msg,
         }
 
     def _update_metrics(self, response_time: float) -> None:
         """Update performance metrics - O(1)"""
-        self.metrics['total_response_time'] += response_time
-        self.metrics['avg_response_time'] = (
-            self.metrics['total_response_time'] / self.metrics['total_queries']
+        self.metrics["total_response_time"] += response_time
+        self.metrics["avg_response_time"] = (
+            self.metrics["total_response_time"] / self.metrics["total_queries"]
         )
 
     def _extract_sources(self, response: str) -> List[str]:
@@ -295,7 +313,7 @@ Please provide a helpful response.
         words = response_lower.split()
         i = 0
         while i < len(words):
-            if words[i] == 'document' and i + 1 < len(words):
+            if words[i] == "document" and i + 1 < len(words):
                 # Look for patterns like "Document 1", "Document (source)", etc.
                 next_word = words[i + 1]
 
@@ -306,12 +324,12 @@ Please provide a helpful response.
                     continue
 
                 # Check for parenthetical sources
-                remaining = ' '.join(words[i:])
-                paren_start = remaining.find('(')
+                remaining = " ".join(words[i:])
+                paren_start = remaining.find("(")
                 if paren_start != -1:
-                    paren_end = remaining.find(')', paren_start)
+                    paren_end = remaining.find(")", paren_start)
                     if paren_end != -1:
-                        source = remaining[paren_start + 1:paren_end].strip()
+                        source = remaining[paren_start + 1 : paren_end].strip()
                         if source:
                             sources.add(source)
 
@@ -333,20 +351,21 @@ Please provide a helpful response.
     def get_performance_metrics(self) -> Dict[str, Any]:
         """Get performance metrics - O(1)"""
         cache_hit_rate = (
-            self.metrics['cache_hits'] / self.metrics['total_queries']
-            if self.metrics['total_queries'] > 0 else 0
+            self.metrics["cache_hits"] / self.metrics["total_queries"]
+            if self.metrics["total_queries"] > 0
+            else 0
         )
 
         return {
-            'total_queries': self.metrics['total_queries'],
-            'cache_hit_rate': cache_hit_rate,
-            'avg_response_time': self.metrics['avg_response_time'],
-            'memory_usage_mb': self.current_memory_usage / (1024 * 1024),
-            'active_conversations': len(self.conversation_memory),
-            'cache_sizes': {
-                'response_cache': len(self.response_cache.cache),
-                'context_cache': len(self.context_cache.cache)
-            }
+            "total_queries": self.metrics["total_queries"],
+            "cache_hit_rate": cache_hit_rate,
+            "avg_response_time": self.metrics["avg_response_time"],
+            "memory_usage_mb": self.current_memory_usage / (1024 * 1024),
+            "active_conversations": len(self.conversation_memory),
+            "cache_sizes": {
+                "response_cache": len(self.response_cache.cache),
+                "context_cache": len(self.context_cache.cache),
+            },
         }
 
     def clear_all_caches(self) -> None:
@@ -354,6 +373,7 @@ Please provide a helpful response.
         self.response_cache.cache.clear()
         self.context_cache.cache.clear()
         logger.info("All caches cleared")
+
 
 # Global instance
 rag_pipeline = RAGPipeline()

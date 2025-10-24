@@ -1,28 +1,34 @@
+import logging
+from typing import List, Optional
+
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, field_validator
-from typing import List, Optional
-from ..rag_pipeline import rag_pipeline
-from ..llm_service import llm_service
-from ..security import security_manager
+
 # from ..monitoring import performance_monitor
 from ..config import config
-import logging
+from ..llm_service import llm_service
+from ..rag_pipeline import rag_pipeline
+from ..security import security_manager
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
 
 class ChatRequest(BaseModel):
     message: str
     conversation_id: Optional[str] = None
 
-    @field_validator('message')
+    @field_validator("message")
     @classmethod
     def validate_message(cls, v):
         if not v or not v.strip():
-            raise ValueError('Message cannot be empty')
+            raise ValueError("Message cannot be empty")
         if len(v) > config.api.max_request_size:
-            raise ValueError(f'Message too long (max {config.api.max_request_size} characters)')
+            raise ValueError(
+                f"Message too long (max {config.api.max_request_size} characters)"
+            )
         return v.strip()
+
 
 class ChatResponse(BaseModel):
     response: str
@@ -31,9 +37,11 @@ class ChatResponse(BaseModel):
     processing_time: Optional[float] = None
     cached: bool = False
 
+
 class ConversationHistory(BaseModel):
     conversation_id: str
     messages: List[dict]
+
 
 @router.post("/", response_model=ChatResponse)
 async def chat(request: ChatRequest, req: Request):
@@ -48,7 +56,9 @@ async def chat(request: ChatRequest, req: Request):
     #     raise HTTPException(status_code=400, detail=message)
 
     # Sanitize input
-    sanitized_message = request.message  # security_manager.sanitize_input(request.message)
+    sanitized_message = (
+        request.message
+    )  # security_manager.sanitize_input(request.message)
 
     # Check if LLM service is available
     # Temporarily disabled for testing
@@ -63,19 +73,20 @@ async def chat(request: ChatRequest, req: Request):
 
         # Process query with RAG pipeline for comprehensive responses
         result = rag_pipeline.process_query(sanitized_message)
-        response = result['response']
+        response = result["response"]
 
         return ChatResponse(
             response=response,
             conversation_id=conversation_id,
-            sources=result.get('sources', []),
-            processing_time=result.get('processing_time', 0.0),
-            cached=result.get('cached', False)
+            sources=result.get("sources", []),
+            processing_time=result.get("processing_time", 0.0),
+            cached=result.get("cached", False),
         )
 
     except Exception as e:
         logger.error(f"Chat processing error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
+
 
 @router.get("/history/{conversation_id}", response_model=ConversationHistory)
 async def get_conversation_history(conversation_id: str, req: Request):
@@ -94,22 +105,25 @@ async def get_conversation_history(conversation_id: str, req: Request):
         # Convert to the expected format with size limits
         messages = []
         for item in history[-50:]:  # Limit to last 50 exchanges for performance
-            messages.append({
-                "role": "user",
-                "content": item["question"][:500],  # Truncate long messages
-                "timestamp": item.get("timestamp", "")
-            })
-            messages.append({
-                "role": "assistant",
-                "content": item["response"][:1000],  # Truncate long responses
-                "timestamp": item.get("timestamp", "")
-            })
+            messages.append(
+                {
+                    "role": "user",
+                    "content": item["question"][:500],  # Truncate long messages
+                    "timestamp": item.get("timestamp", ""),
+                }
+            )
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": item["response"][:1000],  # Truncate long responses
+                    "timestamp": item.get("timestamp", ""),
+                }
+            )
 
-        return ConversationHistory(
-            conversation_id=conversation_id,
-            messages=messages
-        )
+        return ConversationHistory(conversation_id=conversation_id, messages=messages)
 
     except Exception as e:
         logger.error(f"History retrieval error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve conversation history")
+        raise HTTPException(
+            status_code=500, detail="Failed to retrieve conversation history"
+        )

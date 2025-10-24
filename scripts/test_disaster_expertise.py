@@ -4,19 +4,27 @@ Test Disaster Management Expertise
 Validates that the NEOC AI Assistant has proper disaster management knowledge
 """
 
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Add src to path
 src_path = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
+
 def test_disaster_types():
     """Test that the system has disaster management expertise"""
     disaster_keywords = [
-        "disaster", "hazard", "natural", "emergency", "mitigation",
-        "prevention", "response", "recovery", "prediction"
+        "disaster",
+        "hazard",
+        "natural",
+        "emergency",
+        "mitigation",
+        "prevention",
+        "response",
+        "recovery",
+        "prediction",
     ]
 
     print("[INFO] Testing disaster management expertise...")
@@ -39,8 +47,9 @@ def test_disaster_types():
         "total_keywords": len(disaster_keywords),
         "found_keywords": len(found_keywords),
         "coverage": coverage,
-        "passed": coverage >= 0.7  # At least 70% coverage of disaster keywords
+        "passed": coverage >= 0.7,  # At least 70% coverage of disaster keywords
     }
+
 
 def test_citation_requirements():
     """Test that citation requirements are properly configured"""
@@ -51,9 +60,7 @@ def test_citation_requirements():
     llm_service = LLMService()
     system_prompt = str(llm_service.chat_prompt.template)
 
-    citation_indicators = [
-        "ieee", "citation", "bibliography", "reference"
-    ]
+    citation_indicators = ["ieee", "citation", "bibliography", "reference"]
 
     found_indicators = []
     for indicator in citation_indicators:
@@ -67,17 +74,18 @@ def test_citation_requirements():
         "citation_indicators": citation_indicators,
         "found_indicators": found_indicators,
         "coverage": coverage,
-        "passed": coverage >= 0.8  # At least 80% of citation requirements present
+        "passed": coverage >= 0.8,  # At least 80% of citation requirements present
     }
+
 
 def test_rag_components():
     """Test that RAG components are properly initialized"""
     print("[INFO] Testing RAG components...")
 
     try:
-        from neoc_assistant.rag_pipeline import RAGPipeline
         from neoc_assistant.document_processor import DocumentProcessor
         from neoc_assistant.llm_service import LLMService
+        from neoc_assistant.rag_pipeline import RAGPipeline
 
         # Test component initialization
         rag = RAGPipeline()
@@ -88,24 +96,22 @@ def test_rag_components():
             "rag_initialized": True,
             "doc_processor_initialized": True,
             "llm_service_initialized": True,
-            "passed": True
+            "passed": True,
         }
 
     except Exception as e:
         print(f"[FAIL] RAG component initialization failed: {e}")
-        return {
-            "error": str(e),
-            "passed": False
-        }
+        return {"error": str(e), "passed": False}
+
 
 def test_monitoring_setup():
     """Test that monitoring components are configured"""
     print("[INFO] Testing monitoring setup...")
 
     try:
-        from neoc_assistant.monitoring import init_monitoring, get_system_metrics
-        from neoc_assistant.security import init_security_manager
         from neoc_assistant.config import config
+        from neoc_assistant.monitoring import get_system_metrics, init_monitoring
+        from neoc_assistant.security import init_security_manager
 
         # Test monitoring initialization
         init_monitoring()
@@ -117,15 +123,13 @@ def test_monitoring_setup():
             "monitoring_initialized": True,
             "security_initialized": True,
             "metrics_available": bool(metrics),
-            "passed": True
+            "passed": True,
         }
 
     except Exception as e:
         print(f"[FAIL] Monitoring setup failed: {e}")
-        return {
-            "error": str(e),
-            "passed": False
-        }
+        return {"error": str(e), "passed": False}
+
 
 def main():
     """Run all disaster expertise tests"""
@@ -136,7 +140,7 @@ def main():
         ("Disaster Types Recognition", test_disaster_types),
         ("Citation Requirements", test_citation_requirements),
         ("RAG Components", test_rag_components),
-        ("Monitoring Setup", test_monitoring_setup)
+        ("Monitoring Setup", test_monitoring_setup),
     ]
 
     results = {}
@@ -176,6 +180,7 @@ def main():
     else:
         print("[FAIL] Disaster management expertise validation FAILED")
         return 1
+
 
 if __name__ == "__main__":
     exit(main())

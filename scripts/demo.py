@@ -6,6 +6,7 @@ Shows how to use the disaster management LLM application programmatically
 
 from rag_pipeline import rag_pipeline
 
+
 def demo_chat():
     """Demonstrate the chatbot functionality"""
     print("NEOC AI Assistant Demo")
@@ -19,7 +20,7 @@ def demo_chat():
         "What are the most effective early warning systems for earthquakes?",
         "How do mitigation strategies differ between floods and hurricanes?",
         "What role does AI play in disaster risk reduction?",
-        "Explain the effectiveness of tsunami early warning systems"
+        "Explain the effectiveness of tsunami early warning systems",
     ]
 
     for question in questions:
@@ -27,12 +28,13 @@ def demo_chat():
         try:
             result = rag_pipeline.process_query(question)
             print(f"A: {result['response'][:200]}...")
-            if result['sources']:
+            if result["sources"]:
                 print(f"Sources: {', '.join(result['sources'])}")
             print()
         except Exception as e:
             print(f"Error: {e}")
             print()
+
 
 def demo_ui_instructions():
     """Show instructions for using the web UI"""
@@ -52,6 +54,7 @@ def demo_ui_instructions():
     print("- Source citations")
     print("- Conversation memory")
     print("- Responsive design")
+
 
 if __name__ == "__main__":
     demo_chat()

@@ -2,53 +2,61 @@ try:
     from langchain_community.document_loaders import PyPDFDirectoryLoader
 except ImportError:
     from langchain.document_loaders import PyPDFDirectoryLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_chroma import Chroma
-from langchain_core.documents import Document
-import os
-from typing import List, Optional, Dict, Any
-import logging
+
 import hashlib
+import logging
+import os
 import pickle
-from functools import lru_cache
 import time
 from dataclasses import dataclass
+from functools import lru_cache
+from typing import Any, Dict, List, Optional
+
+from langchain_chroma import Chroma
+from langchain_core.documents import Document
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # Configure logging with proper levels
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class DocumentMetadata:
     """Metadata for document chunks with O(1) access"""
+
     doc_id: str
     chunk_id: int
     source: str
     page: Optional[int] = None
     total_chunks: int = 0
 
+
 class DocumentProcessor:
     """Optimized document processor with O(log n) search and caching"""
 
-    def __init__(self, data_dir: str = "data", persist_dir: str = "chroma_db",
-                 cache_dir: str = ".cache"):
+    def __init__(
+        self,
+        data_dir: str = "data",
+        persist_dir: str = "chroma_db",
+        cache_dir: str = ".cache",
+    ):
         self.data_dir = data_dir
         self.persist_dir = persist_dir
         self.cache_dir = cache_dir
         self.embeddings = HuggingFaceEmbeddings(
             model_name="all-MiniLM-L6-v2",
-            cache_folder=os.path.join(cache_dir, "embeddings")
+            cache_folder=os.path.join(cache_dir, "embeddings"),
         )
         # Optimized chunking for better retrieval
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=512,  # Power of 2 for better memory alignment
             chunk_overlap=64,  # Reduced overlap for efficiency
             length_function=len,
-            separators=["\n\n", "\n", ". ", " ", ""]  # Hierarchical splitting
+            separators=["\n\n", "\n", ". ", " ", ""],  # Hierarchical splitting
         )
         self.vectorstore: Optional[Chroma] = None
         self.document_cache: Dict[str, List[Document]] = {}
@@ -68,7 +76,7 @@ class DocumentProcessor:
                 logger.info(f"Loading existing vectorstore from {self.persist_dir}")
                 self.vectorstore = Chroma(
                     persist_directory=self.persist_dir,
-                    embedding_function=self.embeddings
+                    embedding_function=self.embeddings,
                 )
             else:
                 logger.info("Vectorstore will be created when documents are ingested")
@@ -103,12 +111,12 @@ class DocumentProcessor:
         file_paths = []
         for root, _, files in os.walk(self.data_dir):
             for file in files:
-                if file.endswith('.pdf'):
+                if file.endswith(".pdf"):
                     file_paths.append(os.path.join(root, file))
 
         # Sort for consistent hashing
         file_paths.sort()
-        combined = ''.join(file_paths)
+        combined = "".join(file_paths)
         return hashlib.md5(combined.encode()).hexdigest()
 
     def split_documents(self, documents: List[Document]) -> List[Document]:
@@ -122,15 +130,14 @@ class DocumentProcessor:
         if os.path.exists(self.persist_dir):
             logger.info(f"Loading existing vectorstore from {self.persist_dir}")
             self.vectorstore = Chroma(
-                persist_directory=self.persist_dir,
-                embedding_function=self.embeddings
+                persist_directory=self.persist_dir, embedding_function=self.embeddings
             )
         else:
             logger.info("Creating new vectorstore")
             self.vectorstore = Chroma.from_documents(
                 documents=documents,
                 embedding=self.embeddings,
-                persist_directory=self.persist_dir
+                persist_directory=self.persist_dir,
             )
             self.vectorstore.persist()
 
@@ -148,7 +155,9 @@ class DocumentProcessor:
     def search_similar(self, query: str, k: int = 3) -> List[Document]:
         """Search for similar documents - O(log n) with optimized parameters"""
         if self.vectorstore is None:
-            raise ValueError("Vectorstore not initialized. Call create_vectorstore() first.")
+            raise ValueError(
+                "Vectorstore not initialized. Call create_vectorstore() first."
+            )
 
         # Limit k to reasonable bounds for performance
         k = min(max(k, 1), 10)  # O(1) bounds checking
@@ -156,12 +165,11 @@ class DocumentProcessor:
         start_time = time.time()
         try:
             # Use optimized search parameters
-            docs = self.vectorstore.similarity_search(
-                query=query,
-                k=k
-            )
+            docs = self.vectorstore.similarity_search(query=query, k=k)
             search_time = time.time() - start_time
-            logger.debug(f"Vector search completed in {search_time:.3f}s for query: {query[:50]}...")
+            logger.debug(
+                f"Vector search completed in {search_time:.3f}s for query: {query[:50]}..."
+            )
             return docs
         except Exception as e:
             logger.error(f"Search failed for query '{query}': {e}")
@@ -181,6 +189,7 @@ class DocumentProcessor:
         except Exception as e:
             logger.error(f"Error during document ingestion: {str(e)}")
             raise
+
 
 # Global instance for use across the application
 document_processor = DocumentProcessor()

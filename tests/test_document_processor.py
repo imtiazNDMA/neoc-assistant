@@ -1,10 +1,13 @@
 """
 Unit tests for Document Processor optimizations
 """
-import pytest
+
 import time
 from unittest.mock import Mock, patch
-from neoc_assistant.document_processor import DocumentProcessor, DocumentMetadata
+
+import pytest
+
+from neoc_assistant.document_processor import DocumentMetadata, DocumentProcessor
 
 
 class TestDocumentProcessor:
@@ -16,7 +19,7 @@ class TestDocumentProcessor:
         return DocumentProcessor(
             data_dir=str(tmp_path / "data"),
             persist_dir=str(tmp_path / "chroma"),
-            cache_dir=str(tmp_path / "cache")
+            cache_dir=str(tmp_path / "cache"),
         )
 
     def test_search_performance_scaling(self, doc_processor):
@@ -42,13 +45,15 @@ class TestDocumentProcessor:
     def test_caching_efficiency(self, doc_processor):
         """Test document caching reduces load times"""
         # Mock file operations
-        with patch('os.path.exists', return_value=True), \
-             patch('os.listdir', return_value=['test.pdf']), \
-             patch.object(doc_processor, '_get_dir_hash', return_value='testhash'):
+        with (
+            patch("os.path.exists", return_value=True),
+            patch("os.listdir", return_value=["test.pdf"]),
+            patch.object(doc_processor, "_get_dir_hash", return_value="testhash"),
+        ):
 
             # First load - cache miss
             start_time = time.time()
-            with patch('document_processor.PyPDFDirectoryLoader') as mock_loader:
+            with patch("document_processor.PyPDFDirectoryLoader") as mock_loader:
                 mock_loader.return_value.load.return_value = [Mock()]
                 docs1 = doc_processor.load_documents()
             first_load_time = time.time() - start_time
@@ -68,7 +73,7 @@ class TestDocumentProcessor:
         test_docs = [
             Mock(page_content="A" * 2000),  # Large document
             Mock(page_content="B" * 1000),
-            Mock(page_content="C" * 500)
+            Mock(page_content="C" * 500),
         ]
 
         start_time = time.time()
@@ -80,7 +85,11 @@ class TestDocumentProcessor:
 
         # Each chunk should be within size limits
         for chunk in chunks:
-            assert len(chunk.page_content) <= doc_processor.text_splitter.chunk_size + doc_processor.text_splitter.chunk_overlap
+            assert (
+                len(chunk.page_content)
+                <= doc_processor.text_splitter.chunk_size
+                + doc_processor.text_splitter.chunk_overlap
+            )
 
         # Should be reasonably fast
         assert chunking_time < 1.0

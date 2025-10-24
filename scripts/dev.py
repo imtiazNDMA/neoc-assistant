@@ -2,16 +2,19 @@
 """
 NEOC AI Assistant Development Utilities
 """
+import os
 import subprocess
 import sys
-import os
 from pathlib import Path
+
 
 def run_command(cmd, description):
     """Run a command with proper error handling"""
     print(f"🔧 {description}...")
     try:
-        result = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
+        result = subprocess.run(
+            cmd, shell=True, check=True, capture_output=True, text=True
+        )
         print(f"✅ {description} completed")
         return result
     except subprocess.CalledProcessError as e:
@@ -19,30 +22,40 @@ def run_command(cmd, description):
         print(f"Error output: {e.stderr}")
         return None
 
+
 def install_deps():
     """Install dependencies"""
     run_command("uv sync", "Installing dependencies")
+
 
 def run_tests():
     """Run test suite"""
     run_command("uv run pytest tests/ -v", "Running tests")
 
+
 def run_tests_coverage():
     """Run tests with coverage"""
-    run_command("uv run pytest tests/ --cov=src/neoc_assistant --cov-report=html", "Running tests with coverage")
+    run_command(
+        "uv run pytest tests/ --cov=src/neoc_assistant --cov-report=html",
+        "Running tests with coverage",
+    )
+
 
 def lint_code():
     """Lint code"""
     run_command("uv run flake8 src/ tests/", "Linting code")
+
 
 def format_code():
     """Format code"""
     run_command("uv run black src/ tests/", "Formatting code")
     run_command("uv run isort src/ tests/", "Sorting imports")
 
+
 def type_check():
     """Type check code"""
     run_command("uv run mypy src/", "Type checking")
+
 
 def start_server():
     """Start development server"""
@@ -54,11 +67,16 @@ def start_server():
     except KeyboardInterrupt:
         print("\n🛑 Server stopped")
 
+
 def clean_cache():
     """Clean caches and temporary files"""
-    run_command("find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true", "Cleaning Python cache")
+    run_command(
+        "find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true",
+        "Cleaning Python cache",
+    )
     run_command("find . -name '*.pyc' -delete", "Removing compiled Python files")
     run_command("rm -rf .pytest_cache htmlcov .coverage", "Cleaning test artifacts")
+
 
 def show_help():
     """Show help message"""
@@ -79,6 +97,7 @@ def show_help():
     print()
     print("Usage: python scripts/dev.py <command>")
 
+
 def run_all_checks():
     """Run all code quality checks"""
     print("🔍 Running all code quality checks...")
@@ -86,6 +105,7 @@ def run_all_checks():
     lint_code()
     type_check()
     run_tests_coverage()
+
 
 def main():
     if len(sys.argv) < 2:
@@ -95,16 +115,16 @@ def main():
     command = sys.argv[1]
 
     commands = {
-        'install': install_deps,
-        'test': run_tests,
-        'coverage': run_tests_coverage,
-        'lint': lint_code,
-        'format': format_code,
-        'typecheck': type_check,
-        'server': start_server,
-        'clean': clean_cache,
-        'all': run_all_checks,
-        'help': show_help
+        "install": install_deps,
+        "test": run_tests,
+        "coverage": run_tests_coverage,
+        "lint": lint_code,
+        "format": format_code,
+        "typecheck": type_check,
+        "server": start_server,
+        "clean": clean_cache,
+        "all": run_all_checks,
+        "help": show_help,
     }
 
     if command in commands:
@@ -112,6 +132,7 @@ def main():
     else:
         print(f"❌ Unknown command: {command}")
         show_help()
+
 
 if __name__ == "__main__":
     main()

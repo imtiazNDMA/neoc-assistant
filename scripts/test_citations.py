@@ -6,6 +6,7 @@ Test script to verify IEEE citation prompt engineering in NEOC AI Assistant
 from neoc_assistant.llm_service import LLMService
 from neoc_assistant.rag_pipeline import RAGPipeline
 
+
 def test_prompt_engineering():
     """Test that the prompts include proper IEEE citation instructions"""
 
@@ -22,8 +23,12 @@ def test_prompt_engineering():
         has_bibliography_requirement = "Bibliography" in chat_prompt_template
 
         print("Chat Prompt Analysis:")
-        print(f"  Contains IEEE citation instructions: {'YES' if has_citation_instructions else 'NO'}")
-        print(f"  Contains Bibliography requirement: {'YES' if has_bibliography_requirement else 'NO'}")
+        print(
+            f"  Contains IEEE citation instructions: {'YES' if has_citation_instructions else 'NO'}"
+        )
+        print(
+            f"  Contains Bibliography requirement: {'YES' if has_bibliography_requirement else 'NO'}"
+        )
 
         # Check RAG prompt
         rag_prompt_template = llm_service.rag_prompt.template
@@ -31,8 +36,12 @@ def test_prompt_engineering():
         has_bibliography_requirement_rag = "Bibliography" in rag_prompt_template
 
         print("\nRAG Prompt Analysis:")
-        print(f"  Contains IEEE citation instructions: {'YES' if has_citation_instructions_rag else 'NO'}")
-        print(f"  Contains Bibliography requirement: {'YES' if has_bibliography_requirement_rag else 'NO'}")
+        print(
+            f"  Contains IEEE citation instructions: {'YES' if has_citation_instructions_rag else 'NO'}"
+        )
+        print(
+            f"  Contains Bibliography requirement: {'YES' if has_bibliography_requirement_rag else 'NO'}"
+        )
 
     except Exception as e:
         print(f"Error testing LLM service prompts: {e}")
@@ -67,8 +76,12 @@ Response format:
         has_bibliography_requirement_pipeline = "Bibliography" in rag_template
 
         print("\nRAG Pipeline Prompt Analysis:")
-        print(f"  Contains IEEE citation instructions: {'YES' if has_citation_instructions_pipeline else 'NO'}")
-        print(f"  Contains Bibliography requirement: {'YES' if has_bibliography_requirement_pipeline else 'NO'}")
+        print(
+            f"  Contains IEEE citation instructions: {'YES' if has_citation_instructions_pipeline else 'NO'}"
+        )
+        print(
+            f"  Contains Bibliography requirement: {'YES' if has_bibliography_requirement_pipeline else 'NO'}"
+        )
 
     except Exception as e:
         print(f"Error testing RAG pipeline prompts: {e}")
@@ -81,6 +94,7 @@ Response format:
     print("- Citations must be numbered sequentially [1], [2], etc.")
     print("- Only include Bibliography when references are actually cited")
 
+
 def show_sample_citations():
     """Show examples of proper IEEE citations"""
 
@@ -88,14 +102,15 @@ def show_sample_citations():
     print("=" * 30)
 
     samples = [
-        "[1] J. Smith et al., \"Advances in flood prediction using machine learning,\" IEEE Trans. Geosci. Remote Sens., vol. 58, no. 4, pp. 2345-2356, Apr. 2020.",
-        "[2] United Nations Office for Disaster Risk Reduction, \"Global assessment report on disaster risk reduction,\" UNDRR, Geneva, Switzerland, 2022.",
-        "[3] M. Chen and R. Kumar, \"Tsunami early warning systems: A comprehensive review,\" in Proc. Int. Conf. Ocean Eng., Singapore, 2023, pp. 123-130.",
-        "[4] \"Flood risk management guidelines,\" European Commission, Mar. 15, 2023. [Online]. Available: https://ec.europa.eu/flood-risk-management"
+        '[1] J. Smith et al., "Advances in flood prediction using machine learning," IEEE Trans. Geosci. Remote Sens., vol. 58, no. 4, pp. 2345-2356, Apr. 2020.',
+        '[2] United Nations Office for Disaster Risk Reduction, "Global assessment report on disaster risk reduction," UNDRR, Geneva, Switzerland, 2022.',
+        '[3] M. Chen and R. Kumar, "Tsunami early warning systems: A comprehensive review," in Proc. Int. Conf. Ocean Eng., Singapore, 2023, pp. 123-130.',
+        '[4] "Flood risk management guidelines," European Commission, Mar. 15, 2023. [Online]. Available: https://ec.europa.eu/flood-risk-management',
     ]
 
     for sample in samples:
         print(f"  {sample}")
+
 
 if __name__ == "__main__":
     test_prompt_engineering()

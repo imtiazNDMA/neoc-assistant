@@ -2,13 +2,15 @@
 Monitoring and observability for NEOC AI Assistant
 Provides performance metrics, health checks, and system monitoring
 """
-import time
-import psutil
-import threading
-from typing import Dict, Any, List
-from collections import deque
+
 import logging
+import threading
+import time
+from collections import deque
 from functools import wraps
+from typing import Any, Dict, List
+
+import psutil
 
 logger = logging.getLogger(__name__)
 
@@ -23,17 +25,21 @@ class MetricsCollector:
         self.lock = threading.Lock()
 
         # Start background monitoring
-        self.monitoring_thread = threading.Thread(target=self._background_monitor, daemon=True)
+        self.monitoring_thread = threading.Thread(
+            target=self._background_monitor, daemon=True
+        )
         self.monitoring_thread.start()
 
-    def record_metric(self, name: str, value: float, tags: Dict[str, Any] = None) -> None:
+    def record_metric(
+        self, name: str, value: float, tags: Dict[str, Any] = None
+    ) -> None:
         """Record a metric - O(1)"""
         with self.lock:
             metric = {
-                'timestamp': time.time(),
-                'name': name,
-                'value': value,
-                'tags': tags or {}
+                "timestamp": time.time(),
+                "name": name,
+                "value": value,
+                "tags": tags or {},
             }
             self.metrics_history.append(metric)
 
@@ -44,11 +50,11 @@ class MetricsCollector:
 
         # Filter by name
         if name:
-            metrics = [m for m in metrics if m['name'] == name]
+            metrics = [m for m in metrics if m["name"] == name]
 
         # Filter by time
         if since:
-            metrics = [m for m in metrics if m['timestamp'] >= since]
+            metrics = [m for m in metrics if m["timestamp"] >= since]
 
         return metrics
 
@@ -62,24 +68,24 @@ class MetricsCollector:
         # Group by metric name
         aggregated = {}
         for metric in metrics:
-            name = metric['name']
+            name = metric["name"]
             if name not in aggregated:
                 aggregated[name] = {
-                    'count': 0,
-                    'sum': 0,
-                    'min': float('inf'),
-                    'max': float('-inf'),
-                    'avg': 0
+                    "count": 0,
+                    "sum": 0,
+                    "min": float("inf"),
+                    "max": float("-inf"),
+                    "avg": 0,
                 }
 
-            aggregated[name]['count'] += 1
-            aggregated[name]['sum'] += metric['value']
-            aggregated[name]['min'] = min(aggregated[name]['min'], metric['value'])
-            aggregated[name]['max'] = max(aggregated[name]['max'], metric['value'])
+            aggregated[name]["count"] += 1
+            aggregated[name]["sum"] += metric["value"]
+            aggregated[name]["min"] = min(aggregated[name]["min"], metric["value"])
+            aggregated[name]["max"] = max(aggregated[name]["max"], metric["value"])
 
         # Calculate averages
         for stats in aggregated.values():
-            stats['avg'] = stats['sum'] / stats['count'] if stats['count'] > 0 else 0
+            stats["avg"] = stats["sum"] / stats["count"] if stats["count"] > 0 else 0
 
         return aggregated
 
@@ -88,14 +94,13 @@ class MetricsCollector:
         while True:
             try:
                 # System metrics
-                self.record_metric('cpu_percent', psutil.cpu_percent(interval=1))
-                self.record_metric('memory_percent', psutil.virtual_memory().percent)
-                self.record_metric('disk_usage_percent',
-                                 psutil.disk_usage('/').percent)
+                self.record_metric("cpu_percent", psutil.cpu_percent(interval=1))
+                self.record_metric("memory_percent", psutil.virtual_memory().percent)
+                self.record_metric("disk_usage_percent", psutil.disk_usage("/").percent)
 
                 # Application uptime
                 uptime = time.time() - self.start_time
-                self.record_metric('app_uptime_seconds', uptime)
+                self.record_metric("app_uptime_seconds", uptime)
 
                 time.sleep(30)  # Collect every 30 seconds
 
@@ -113,46 +118,42 @@ class HealthChecker:
 
     def register_check(self, name: str, check_func, interval: int = 60):
         """Register a health check - O(1)"""
-        self.checks[name] = {
-            'func': check_func,
-            'interval': interval,
-            'last_run': 0
-        }
+        self.checks[name] = {"func": check_func, "interval": interval, "last_run": 0}
 
     def run_check(self, name: str) -> Dict[str, Any]:
         """Run a specific health check - O(1)"""
         if name not in self.checks:
-            return {'status': 'unknown', 'message': f'Check {name} not registered'}
+            return {"status": "unknown", "message": f"Check {name} not registered"}
 
         check_info = self.checks[name]
         current_time = time.time()
 
         # Check if we need to run the check
-        if current_time - check_info['last_run'] < check_info['interval']:
-            return self.last_results.get(name, {'status': 'unknown'})
+        if current_time - check_info["last_run"] < check_info["interval"]:
+            return self.last_results.get(name, {"status": "unknown"})
 
         try:
             start_time = time.time()
-            result = check_info['func']()
+            result = check_info["func"]()
             check_time = time.time() - start_time
 
             health_result = {
-                'status': 'healthy' if result else 'unhealthy',
-                'check_time': check_time,
-                'timestamp': current_time,
-                'message': 'Check passed' if result else 'Check failed'
+                "status": "healthy" if result else "unhealthy",
+                "check_time": check_time,
+                "timestamp": current_time,
+                "message": "Check passed" if result else "Check failed",
             }
 
-            check_info['last_run'] = current_time
+            check_info["last_run"] = current_time
             self.last_results[name] = health_result
 
             return health_result
 
         except Exception as e:
             health_result = {
-                'status': 'error',
-                'error': str(e),
-                'timestamp': current_time
+                "status": "error",
+                "error": str(e),
+                "timestamp": current_time,
             }
             self.last_results[name] = health_result
             return health_result
@@ -164,13 +165,16 @@ class HealthChecker:
             results[name] = self.run_check(name)
 
         # Overall health
-        unhealthy_checks = [name for name, result in results.items()
-                          if result.get('status') != 'healthy']
+        unhealthy_checks = [
+            name
+            for name, result in results.items()
+            if result.get("status") != "healthy"
+        ]
 
-        results['overall'] = {
-            'status': 'healthy' if not unhealthy_checks else 'unhealthy',
-            'unhealthy_checks': unhealthy_checks,
-            'total_checks': len(self.checks)
+        results["overall"] = {
+            "status": "healthy" if not unhealthy_checks else "unhealthy",
+            "unhealthy_checks": unhealthy_checks,
+            "total_checks": len(self.checks),
         }
 
         return results
@@ -184,11 +188,13 @@ class PerformanceMonitor:
 
     def monitor_function(self, func_name: str):
         """Decorator to monitor function performance"""
+
         def decorator(func):
             import asyncio
             from functools import wraps
 
             if asyncio.iscoroutinefunction(func):
+
                 @wraps(func)
                 async def async_wrapper(*args, **kwargs):
                     start_time = time.time()
@@ -196,21 +202,23 @@ class PerformanceMonitor:
                         result = await func(*args, **kwargs)
                         execution_time = time.time() - start_time
                         self.metrics.record_metric(
-                            f'function_execution_time',
+                            f"function_execution_time",
                             execution_time,
-                            {'function': func_name}
+                            {"function": func_name},
                         )
                         return result
                     except Exception as e:
                         execution_time = time.time() - start_time
                         self.metrics.record_metric(
-                            f'function_error',
+                            f"function_error",
                             execution_time,
-                            {'function': func_name, 'error': str(e)}
+                            {"function": func_name, "error": str(e)},
                         )
                         raise
+
                 return async_wrapper
             else:
+
                 @wraps(func)
                 def sync_wrapper(*args, **kwargs):
                     start_time = time.time()
@@ -218,24 +226,27 @@ class PerformanceMonitor:
                         result = func(*args, **kwargs)
                         execution_time = time.time() - start_time
                         self.metrics.record_metric(
-                            f'function_execution_time',
+                            f"function_execution_time",
                             execution_time,
-                            {'function': func_name}
+                            {"function": func_name},
                         )
                         return result
                     except Exception as e:
                         execution_time = time.time() - start_time
                         self.metrics.record_metric(
-                            f'function_error',
+                            f"function_error",
                             execution_time,
-                            {'function': func_name, 'error': str(e)}
+                            {"function": func_name, "error": str(e)},
                         )
                         raise
+
                 return sync_wrapper
+
         return decorator
 
     def time_block(self, name: str):
         """Context manager for timing code blocks"""
+
         class Timer:
             def __init__(self, monitor, block_name):
                 self.monitor = monitor
@@ -250,9 +261,9 @@ class PerformanceMonitor:
                 if self.start_time:
                     execution_time = time.time() - self.start_time
                     self.monitor.metrics.record_metric(
-                        f'block_execution_time',
+                        f"block_execution_time",
                         execution_time,
-                        {'block': self.block_name}
+                        {"block": self.block_name},
                     )
 
         return Timer(self, name)
@@ -271,7 +282,8 @@ def init_monitoring():
     def check_ollama():
         try:
             import requests
-            response = requests.get('http://localhost:11434/api/tags', timeout=5)
+
+            response = requests.get("http://localhost:11434/api/tags", timeout=5)
             return response.status_code == 200
         except:
             return False
@@ -279,6 +291,7 @@ def init_monitoring():
     def check_vectorstore():
         try:
             from .document_processor import document_processor
+
             return document_processor.vectorstore is not None
         except:
             return False
@@ -287,9 +300,9 @@ def init_monitoring():
         memory = psutil.virtual_memory()
         return memory.percent < 90  # Less than 90% usage
 
-    health_checker.register_check('ollama', check_ollama, interval=60)
-    health_checker.register_check('vectorstore', check_vectorstore, interval=30)
-    health_checker.register_check('memory', check_memory, interval=10)
+    health_checker.register_check("ollama", check_ollama, interval=60)
+    health_checker.register_check("vectorstore", check_vectorstore, interval=30)
+    health_checker.register_check("memory", check_memory, interval=10)
 
     logger.info("Monitoring system initialized")
 
@@ -298,12 +311,12 @@ def init_monitoring():
 def get_system_metrics() -> Dict[str, Any]:
     """Get comprehensive system metrics"""
     return {
-        'system': {
-            'cpu_percent': psutil.cpu_percent(),
-            'memory_percent': psutil.virtual_memory().percent,
-            'disk_percent': psutil.disk_usage('/').percent,
-            'uptime': time.time() - metrics_collector.start_time
+        "system": {
+            "cpu_percent": psutil.cpu_percent(),
+            "memory_percent": psutil.virtual_memory().percent,
+            "disk_percent": psutil.disk_usage("/").percent,
+            "uptime": time.time() - metrics_collector.start_time,
         },
-        'application': metrics_collector.get_aggregated_metrics(),
-        'health': health_checker.run_all_checks()
+        "application": metrics_collector.get_aggregated_metrics(),
+        "health": health_checker.run_all_checks(),
     }

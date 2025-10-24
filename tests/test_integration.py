@@ -1,10 +1,12 @@
 """
 Integration tests for the complete NEOC AI Assistant disaster management system
 """
-import pytest
-import requests
+
 import time
 from unittest.mock import patch
+
+import pytest
+import requests
 
 
 class TestSystemIntegration:
@@ -12,27 +14,36 @@ class TestSystemIntegration:
 
     def test_full_pipeline_integration(self):
         """Test complete RAG pipeline from query to response"""
-        from neoc_assistant.rag_pipeline import rag_pipeline
         from neoc_assistant.document_processor import document_processor
+        from neoc_assistant.rag_pipeline import rag_pipeline
 
         # Mock document search
-        with patch('src.neoc_assistant.document_processor.document_processor.search_similar') as mock_search:
+        with patch(
+            "src.neoc_assistant.document_processor.document_processor.search_similar"
+        ) as mock_search:
             mock_search.return_value = [
-                type('MockDoc', (), {
-                    'page_content': 'Climate change affects weather patterns significantly.',
-                    'metadata': {'source': 'climate.pdf'}
-                })()
+                type(
+                    "MockDoc",
+                    (),
+                    {
+                        "page_content": "Climate change affects weather patterns significantly.",
+                        "metadata": {"source": "climate.pdf"},
+                    },
+                )()
             ]
 
             # Mock LLM response
-            with patch('src.neoc_assistant.rag_pipeline.rag_pipeline.llm_service.llm.invoke') as mock_llm:
-                mock_llm.return_value = "Climate change affects weather patterns according to research."
+            with patch(
+                "src.neoc_assistant.rag_pipeline.rag_pipeline.llm_service.llm.invoke"
+            ) as mock_llm:
+                mock_llm.return_value = (
+                    "Climate change affects weather patterns according to research."
+                )
 
                 # Test full pipeline
                 start_time = time.time()
                 result = rag_pipeline.process_query(
-                    "How does climate change affect weather?",
-                    "test_conversation"
+                    "How does climate change affect weather?", "test_conversation"
                 )
                 total_time = time.time() - start_time
 
@@ -48,7 +59,9 @@ class TestSystemIntegration:
         """Test that caching works across the full pipeline"""
         from src.neoc_assistant.rag_pipeline import rag_pipeline
 
-        with patch.object(rag_pipeline.rag_chain, 'invoke', return_value="Cached response"):
+        with patch.object(
+            rag_pipeline.rag_chain, "invoke", return_value="Cached response"
+        ):
             # First request
             result1 = rag_pipeline.process_query("test query")
             first_time = result1.get("processing_time", 0)
@@ -75,7 +88,7 @@ class TestSystemIntegration:
             rag_pipeline._add_to_conversation_memory(
                 f"conv_{i % 10}",  # Reuse conversation IDs
                 f"Question {i}",
-                f"Response {i}" * 50  # Large responses
+                f"Response {i}" * 50,  # Large responses
             )
 
         # Memory should be managed
@@ -90,7 +103,9 @@ class TestSystemIntegration:
         from src.neoc_assistant.rag_pipeline import rag_pipeline
 
         # Test with failing components
-        with patch.object(rag_pipeline.rag_chain, 'invoke', side_effect=Exception("Test error")):
+        with patch.object(
+            rag_pipeline.rag_chain, "invoke", side_effect=Exception("Test error")
+        ):
             result = rag_pipeline.process_query("test query")
 
             assert result["success"] is False
@@ -99,11 +114,11 @@ class TestSystemIntegration:
 
     def test_performance_metrics_integration(self):
         """Test performance metrics are collected"""
-        from src.neoc_assistant.rag_pipeline import rag_pipeline
         from src.neoc_assistant.llm_service import llm_service
+        from src.neoc_assistant.rag_pipeline import rag_pipeline
 
         # Make some requests
-        with patch.object(rag_pipeline.rag_chain, 'invoke', return_value="Test"):
+        with patch.object(rag_pipeline.rag_chain, "invoke", return_value="Test"):
             for i in range(5):
                 rag_pipeline.process_query(f"Query {i}")
 
