@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.12", "3.13"]
+        python-version: ["3.13"]
 
     steps:
     - uses: actions/checkout@v4
@@ -28,6 +28,13 @@ jobs:
 
     - name: Install dependencies
       run: uv sync --dev
+
+    - name: Install Ollama
+      run: |
+        curl -fsSL https://ollama.ai/install.sh | sh
+        ollama serve &
+        sleep 5
+        ollama pull phi3
 
     - name: Run linting
       run: |

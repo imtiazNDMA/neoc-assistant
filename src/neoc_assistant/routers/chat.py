@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from typing import List, Optional
 from ..rag_pipeline import rag_pipeline
 from ..llm_service import llm_service
@@ -15,7 +15,8 @@ class ChatRequest(BaseModel):
     message: str
     conversation_id: Optional[str] = None
 
-    @validator('message')
+    @field_validator('message')
+    @classmethod
     def validate_message(cls, v):
         if not v or not v.strip():
             raise ValueError('Message cannot be empty')
@@ -60,15 +61,16 @@ async def chat(request: ChatRequest, req: Request):
     try:
         conversation_id = request.conversation_id or f"conv_{hash(client_id)}"
 
-        # Process query directly with LLM service (simplified for testing)
-        response = llm_service.generate_response(sanitized_message)
+        # Process query with RAG pipeline for comprehensive responses
+        result = rag_pipeline.process_query(sanitized_message)
+        response = result['response']
 
         return ChatResponse(
             response=response,
             conversation_id=conversation_id,
-            sources=[],
-            processing_time=0.0,
-            cached=False
+            sources=result.get('sources', []),
+            processing_time=result.get('processing_time', 0.0),
+            cached=result.get('cached', False)
         )
 
     except Exception as e:

@@ -147,8 +147,8 @@ Answer:""")
             return cached_response
 
         try:
-            # Temporary static response for testing
-            response = f"I received your question: '{question}'. This is a test response from NEOC AI Assistant."
+            # Generate response using the LLM chain
+            response = self.chat_chain.invoke({"context": context or "General disaster management knowledge", "question": question})
 
             if response:
                 response = response.strip()
